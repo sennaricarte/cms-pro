@@ -9,6 +9,7 @@ import {
   type PageBlock,
   type PageBlockType,
 } from '../lib/page-blocks';
+import { isRepoImagePath } from '../lib/media-client';
 import { slugify } from '../lib/slugify';
 import CtaBlockEditor from './blocks/CtaBlockEditor';
 import GalleryBlockEditor from './blocks/GalleryBlockEditor';
@@ -86,15 +87,6 @@ function withUid(data: PageBlock): FormBlock {
   return { uid: newUid(), data };
 }
 
-function isValidUrl(value: string): boolean {
-  try {
-    new URL(value);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 function validatePage(form: FormState): string[] {
   const errors: string[] = [];
 
@@ -133,8 +125,8 @@ function validatePage(form: FormState): string[] {
 
         if (!block.data.image.trim()) {
           errors.push(`${label}: escolha uma imagem.`);
-        } else if (!isValidUrl(block.data.image.trim())) {
-          errors.push(`${label}: a imagem precisa ser uma URL válida.`);
+        } else if (!isRepoImagePath(block.data.image.trim())) {
+          errors.push(`${label}: a imagem precisa ser um arquivo em src/assets/uploads/.`);
         }
 
         if (block.data.cta) {
@@ -163,8 +155,8 @@ function validatePage(form: FormState): string[] {
         block.data.images.forEach((image, imageIndex) => {
           if (!image.src.trim()) {
             errors.push(`${label}, imagem ${imageIndex + 1}: escolha uma imagem.`);
-          } else if (!isValidUrl(image.src.trim())) {
-            errors.push(`${label}, imagem ${imageIndex + 1}: a imagem precisa ser uma URL válida.`);
+          } else if (!isRepoImagePath(image.src.trim())) {
+            errors.push(`${label}, imagem ${imageIndex + 1}: a imagem precisa ser um arquivo em src/assets/uploads/.`);
           }
 
           if (!image.alt.trim()) {
@@ -204,8 +196,8 @@ function fieldErrorsFromMessages(form: FormState): Record<string, string> {
 
         if (!block.data.image.trim()) {
           errors[`${block.uid}.image`] = 'Escolha uma imagem na biblioteca.';
-        } else if (!isValidUrl(block.data.image.trim())) {
-          errors[`${block.uid}.image`] = 'A imagem precisa ser uma URL válida.';
+        } else if (!isRepoImagePath(block.data.image.trim())) {
+          errors[`${block.uid}.image`] = 'A imagem precisa ser um arquivo em src/assets/uploads/.';
         }
 
         if (block.data.cta && !block.data.cta.label.trim()) {
@@ -231,8 +223,8 @@ function fieldErrorsFromMessages(form: FormState): Record<string, string> {
         block.data.images.forEach((image, imageIndex) => {
           if (!image.src.trim()) {
             errors[`${block.uid}.images.${imageIndex}`] = 'Escolha uma imagem na biblioteca.';
-          } else if (!isValidUrl(image.src.trim())) {
-            errors[`${block.uid}.images.${imageIndex}`] = 'A imagem precisa ser uma URL válida.';
+          } else if (!isRepoImagePath(image.src.trim())) {
+            errors[`${block.uid}.images.${imageIndex}`] = 'A imagem precisa ser um arquivo em src/assets/uploads/.';
           } else if (!image.alt.trim()) {
             errors[`${block.uid}.images.${imageIndex}`] = 'Informe o texto alternativo.';
           }
@@ -623,7 +615,8 @@ export default function PageEditor({ token, mode, path, onSaved, onCancel }: Pro
           altValue=""
           showAlt={false}
           disabled={saving}
-          onChange={({ url }) => updateField('ogImage', url)}
+          token={token}
+          onChange={({ path }) => updateField('ogImage', path)}
         />
 
         <div class="admin-field">
@@ -661,6 +654,7 @@ export default function PageEditor({ token, mode, path, onSaved, onCancel }: Pro
             <div class="admin-block-list">
               {form.blocks.map((block, index) => {
                 const shared = {
+                  token,
                   onRemove: () => removeBlock(block.uid),
                   onMoveUp: () => moveBlock(block.uid, -1),
                   onMoveDown: () => moveBlock(block.uid, 1),

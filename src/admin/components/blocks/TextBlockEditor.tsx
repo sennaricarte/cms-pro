@@ -1,4 +1,5 @@
 import type { BlockEditorProps, TextBlockData } from '../../lib/page-blocks';
+import RichTextEditor from '../RichTextEditor';
 import BlockChrome from './BlockChrome';
 
 export default function TextBlockEditor({
@@ -38,15 +39,13 @@ export default function TextBlockEditor({
       </div>
 
       <div class="admin-field">
-        <label htmlFor={`${idPrefix}-body`}>Corpo (Markdown)</label>
-        <textarea
+        <label htmlFor={`${idPrefix}-body`}>Corpo</label>
+        <RichTextEditor
           id={`${idPrefix}-body`}
-          class="admin-textarea"
-          rows={8}
           value={data.body}
-          onInput={(event) => onChange({ ...data, body: (event.target as HTMLTextAreaElement).value })}
+          onChange={(body) => onChange({ ...data, body })}
+          placeholder="Escreva o bloco. Você pode colar conteúdo do Google Docs ou do Word."
           disabled={disabled}
-          required
         />
         {errors.body ? <p class="admin-field__error">{errors.body}</p> : null}
       </div>

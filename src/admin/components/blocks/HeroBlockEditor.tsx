@@ -3,6 +3,7 @@ import ImagePickerField from '../ImagePickerField';
 import BlockChrome from './BlockChrome';
 
 export default function HeroBlockEditor({
+  token,
   data,
   onChange,
   onRemove,
@@ -54,6 +55,7 @@ export default function HeroBlockEditor({
       </div>
 
       <ImagePickerField
+        token={token}
         label="Imagem"
         value={data.image}
         altValue=""
@@ -61,7 +63,7 @@ export default function HeroBlockEditor({
         required
         disabled={disabled}
         error={errors.image}
-        onChange={({ url }) => onChange({ ...data, image: url })}
+        onChange={({ path }) => onChange({ ...data, image: path })}
       />
 
       <label class="admin-checkbox">

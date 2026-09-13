@@ -40,7 +40,7 @@ const blogPostingJsonLd: Record<string, unknown> = {
   '@context': 'https://schema.org',
   '@type': 'BlogPosting',
   headline: entry.data.title,
-  image: entry.data.featuredImage.src,
+  image: toAbsoluteUrl(entry.data.featuredImage.src.src),
   datePublished: entry.data.publishedDate.toISOString(),
   author: {
     '@type': 'Person',
@@ -73,7 +73,6 @@ if (entry.data.updatedDate) {
     <figure class="article__featured">
       <Image
         src={entry.data.featuredImage.src}
-        inferSize
         alt={entry.data.featuredImage.alt}
         format="webp"
         quality="mid"
@@ -81,7 +80,7 @@ if (entry.data.updatedDate) {
         fetchpriority="high"
       />
     </figure>
-    <div class="article__body">
+    <div class="article__body prose">
       <Content />
     </div>
     {
@@ -133,10 +132,6 @@ if (entry.data.updatedDate) {
     width: 100%;
     height: auto;
     border-radius: 0.75rem;
-  }
-
-  .article__body :global(p + p) {
-    margin-top: var(--space-2);
   }
 
   .article__tags-title {

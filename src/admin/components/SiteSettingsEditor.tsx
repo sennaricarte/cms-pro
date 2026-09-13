@@ -552,16 +552,17 @@ export default function SiteSettingsEditor({ token }: Props) {
           </div>
 
           <ImagePickerField
+            token={token}
             label="Logo"
             value={form.logoPath}
             altValue={form.logoAlt}
             required
             disabled={saving}
             error={fieldErrors.logo}
-            onChange={({ url, alt }) => {
+            onChange={({ path, alt }) => {
               setForm((current) => ({
                 ...current,
-                logoPath: url,
+                logoPath: path,
                 logoAlt: alt,
               }));
             }}

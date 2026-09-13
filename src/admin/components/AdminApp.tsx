@@ -3,7 +3,6 @@ import { clearToken } from '../lib/github-client';
 import ArticleEditor from './ArticleEditor';
 import Dashboard from './Dashboard';
 import LoginScreen from './LoginScreen';
-import MediaAuthGate from './MediaAuthGate';
 import MediaLibrary from './MediaLibrary';
 import PageEditor from './PageEditor';
 import SiteSettingsEditor from './SiteSettingsEditor';
@@ -129,9 +128,7 @@ export default function AdminApp() {
               Sair
             </button>
           </header>
-          <MediaAuthGate>
-            <MediaLibrary />
-          </MediaAuthGate>
+          <MediaLibrary token={session.token} />
         </div>
       ) : (
         <Dashboard

@@ -27,7 +27,7 @@ const html = markdown.parse(body, { async: false });
 
 <section class="text-block">
   {heading && <HeadingTag>{heading}</HeadingTag>}
-  <div class="text-block__body" set:html={html} />
+  <div class="text-block__body prose" set:html={html} />
 </section>
 
 <style>
@@ -40,15 +40,6 @@ const html = markdown.parse(body, { async: false });
     font-family: var(--font-secondary);
     margin-bottom: var(--space-2);
     color: var(--color-primary);
-  }
-
-  .text-block__body :global(p + p) {
-    margin-top: var(--space-2);
-  }
-
-  .text-block__body :global(:is(h3, h4, h5, h6)) {
-    margin-top: var(--space-3);
-    margin-bottom: var(--space-1);
   }
 
   .text-block__body :global(a) {

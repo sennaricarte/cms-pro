@@ -40,6 +40,7 @@ export type PageBlock = HeroBlockData | TextBlockData | GalleryBlockData | CtaBl
 export type PageBlockType = PageBlock['type'];
 
 export interface BlockEditorProps<T extends PageBlock> {
+  token: string;
   data: T;
   onChange: (next: T) => void;
   onRemove: () => void;

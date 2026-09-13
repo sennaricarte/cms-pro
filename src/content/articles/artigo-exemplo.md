@@ -6,7 +6,7 @@ metaDescription: Artigo de exemplo do template com CMS no repositório, pronto p
 ogImage: /uploads/og-artigo-exemplo.jpg
 excerpt: Um artigo inicial para validar a collection de posts e o fluxo de publicação.
 featuredImage:
-  src: https://picsum.photos/id/1015/1200/800
+  src: ../../assets/uploads/exemplo/placeholder.webp
   alt: Mesa de trabalho com notebook e anotações
 author: Equipe Editorial
 tags:

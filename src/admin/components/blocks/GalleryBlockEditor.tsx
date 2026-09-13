@@ -3,6 +3,7 @@ import ImagePickerField from '../ImagePickerField';
 import BlockChrome from './BlockChrome';
 
 export default function GalleryBlockEditor({
+  token,
   data,
   onChange,
   onRemove,
@@ -43,13 +44,14 @@ export default function GalleryBlockEditor({
         {data.images.map((image, index) => (
           <li key={`gallery-image-${index}`} class="admin-gallery-item">
             <ImagePickerField
+              token={token}
               label={`Imagem ${index + 1}`}
               value={image.src}
               altValue={image.alt}
               required
               disabled={disabled}
               error={errors[`images.${index}`]}
-              onChange={({ url, alt }) => updateImage(index, url, alt)}
+              onChange={({ path, alt }) => updateImage(index, path, alt)}
             />
             <button
               type="button"

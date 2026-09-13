@@ -1,13 +1,14 @@
 import { useId, useState } from 'preact/hooks';
-import MediaAuthGate from './MediaAuthGate';
+import { toPreviewUrl } from '../lib/media-client';
 import MediaLibrary from './MediaLibrary';
 
 export interface ImagePickerChange {
-  url: string;
+  path: string;
   alt: string;
 }
 
 interface Props {
+  token: string;
   label: string;
   value: string;
   altValue: string;
@@ -19,6 +20,7 @@ interface Props {
 }
 
 export default function ImagePickerField({
+  token,
   label,
   value,
   altValue,
@@ -31,6 +33,7 @@ export default function ImagePickerField({
   const [pickerOpen, setPickerOpen] = useState(false);
   const fieldId = useId();
   const invalid = Boolean(error);
+  const preview = toPreviewUrl(value);
 
   return (
     <div class={`admin-field admin-image-picker${invalid ? ' admin-field--invalid' : ''}`}>
@@ -41,7 +44,7 @@ export default function ImagePickerField({
 
       {value ? (
         <div class="admin-media-picked">
-          <img src={value} alt={altValue || 'Imagem selecionada'} />
+          {preview ? <img src={preview} alt={altValue || 'Imagem selecionada'} /> : null}
           <p class="admin-field__hint">{value}</p>
         </div>
       ) : (
@@ -62,7 +65,7 @@ export default function ImagePickerField({
           <button
             type="button"
             class="admin-button admin-button--ghost"
-            onClick={() => onChange({ url: '', alt: '' })}
+            onClick={() => onChange({ path: '', alt: '' })}
             disabled={disabled}
           >
             Remover imagem
@@ -77,7 +80,7 @@ export default function ImagePickerField({
             id={`${fieldId}-alt`}
             type="text"
             value={altValue}
-            onInput={(event) => onChange({ url: value, alt: (event.target as HTMLInputElement).value })}
+            onInput={(event) => onChange({ path: value, alt: (event.target as HTMLInputElement).value })}
             disabled={disabled}
             required={required}
           />
@@ -95,18 +98,17 @@ export default function ImagePickerField({
                 Fechar
               </button>
             </div>
-            <MediaAuthGate>
-              <MediaLibrary
-                selectMode
-                onSelect={(item) => {
-                  onChange({
-                    url: item.url,
-                    alt: altValue.trim() ? altValue : item.alt,
-                  });
-                  setPickerOpen(false);
-                }}
-              />
-            </MediaAuthGate>
+            <MediaLibrary
+              token={token}
+              selectMode
+              onSelect={(item) => {
+                onChange({
+                  path: item.path,
+                  alt: altValue.trim() ? altValue : item.alt || item.name,
+                });
+                setPickerOpen(false);
+              }}
+            />
           </div>
         </div>
       ) : null}

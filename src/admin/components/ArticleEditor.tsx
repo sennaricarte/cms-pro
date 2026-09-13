@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'preact/hooks';
 import { parseFrontmatter, serializeFrontmatter } from '../lib/frontmatter';
 import { createOrUpdateFile, getFileContent } from '../lib/github-client';
+import { isRepoImagePath } from '../lib/media-client';
 import { slugify } from '../lib/slugify';
 import ImagePickerField from './ImagePickerField';
+import RichTextEditor from './RichTextEditor';
 
 interface Props {
   token: string;
@@ -123,12 +125,8 @@ function validateForm(form: FormState): FieldErrors {
 
   if (!form.featuredImageSrc.trim()) {
     errors.featuredImageSrc = 'Escolha uma imagem de destaque na biblioteca.';
-  } else {
-    try {
-      new URL(form.featuredImageSrc.trim());
-    } catch {
-      errors.featuredImageSrc = 'A imagem de destaque precisa ser uma URL válida.';
-    }
+  } else if (!isRepoImagePath(form.featuredImageSrc)) {
+    errors.featuredImageSrc = 'A imagem de destaque precisa ser um arquivo em src/assets/uploads/.';
   }
 
   if (!form.featuredImageAlt.trim()) {
@@ -454,16 +452,17 @@ export default function ArticleEditor({ token, mode, path, onSaved, onCancel }: 
         </div>
 
         <ImagePickerField
+          token={token}
           label="Imagem de destaque"
           value={form.featuredImageSrc}
           altValue={form.featuredImageAlt}
           required
           disabled={saving}
           error={errors.featuredImageSrc || errors.featuredImageAlt}
-          onChange={({ url, alt }) => {
+          onChange={({ path, alt }) => {
             setForm((current) => ({
               ...current,
-              featuredImageSrc: url,
+              featuredImageSrc: path,
               featuredImageAlt: alt,
             }));
           }}
@@ -509,15 +508,13 @@ export default function ArticleEditor({ token, mode, path, onSaved, onCancel }: 
         </div>
 
         <div class="admin-field">
-          <label htmlFor="article-body">Corpo do artigo (Markdown)</label>
-          <textarea
+          <label htmlFor="article-body">Corpo do artigo</label>
+          <RichTextEditor
             id="article-body"
-            class="admin-textarea admin-textarea--body"
-            rows={16}
             value={form.body}
-            onInput={(event) => updateField('body', (event.target as HTMLTextAreaElement).value)}
+            onChange={(body) => updateField('body', body)}
+            placeholder="Escreva o artigo. Você pode colar conteúdo do Google Docs ou do Word."
             disabled={saving}
-            spellCheck={true}
           />
         </div>
 

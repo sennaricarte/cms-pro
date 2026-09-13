@@ -58,7 +58,7 @@ interface GitHubContentItem {
   message?: string;
 }
 
-function getPublicRepoConfig(): { owner: string; repo: string; branch: string } | null {
+export function getPublicRepoConfig(): { owner: string; repo: string; branch: string } | null {
   const owner = import.meta.env.PUBLIC_GITHUB_OWNER;
   const repo = import.meta.env.PUBLIC_GITHUB_REPO;
 
@@ -209,6 +209,19 @@ export function decodeBase64Utf8(encoded: string): string {
  */
 export function encodeBase64Utf8(value: string): string {
   const bytes = new TextEncoder().encode(value);
+  const chunkSize = 0x2000;
+  let binary = '';
+
+  for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+    const chunk = bytes.subarray(offset, offset + chunkSize);
+    binary += String.fromCharCode(...chunk);
+  }
+
+  return btoa(binary);
+}
+
+/** Base64 de bytes crus (imagens). Não passar por TextEncoder — isso corromperia o binário. */
+export function encodeBase64Bytes(bytes: Uint8Array): string {
   const chunkSize = 0x2000;
   let binary = '';
 
@@ -399,7 +412,7 @@ async function afterWrite(): Promise<string | undefined> {
 export async function createOrUpdateFile(
   token: string,
   path: string,
-  content: string,
+  content: string | Uint8Array,
   message: string,
   sha?: string,
 ): Promise<WriteFileResult> {
@@ -411,6 +424,7 @@ export async function createOrUpdateFile(
 
   const { owner, repo, branch } = config;
   const url = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeRepoPath(path)}`;
+  const encoded = typeof content === 'string' ? encodeBase64Utf8(content) : encodeBase64Bytes(content);
 
   try {
     const response = await fetch(url, {
@@ -421,7 +435,7 @@ export async function createOrUpdateFile(
       },
       body: JSON.stringify({
         message,
-        content: encodeBase64Utf8(content),
+        content: encoded,
         branch,
         ...(sha ? { sha } : {}),
       }),

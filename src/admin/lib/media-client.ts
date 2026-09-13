@@ -1,17 +1,25 @@
 /**
- * Cliente do Worker de upload (R2), usado só no browser (admin).
- *
- * O Upload Secret nunca entra em env de build. Ele é colado pelo usuário e
- * fica no localStorage deste navegador — é diferente do PAT do GitHub.
+ * Biblioteca de mídia no próprio repositório (src/assets/uploads/),
+ * gravada com o mesmo PAT do GitHub usado para artigos e páginas.
  */
+import {
+  createOrUpdateFile,
+  deleteFile,
+  getFileContent,
+  getPublicRepoConfig,
+  listDirectory,
+  type GitHubDirEntry,
+} from './github-client';
+import { compressImage } from './image-compress';
 
 export type MediaErrorCode = 'UNAUTHORIZED' | 'ERROR';
 
 export interface MediaItem {
   key: string;
+  path: string;
   url: string;
-  size: number;
-  uploaded: string;
+  sha: string;
+  name: string;
   alt: string;
 }
 
@@ -22,50 +30,12 @@ export interface MediaFailure {
 }
 
 export type MediaListResult = { ok: true; items: MediaItem[] } | MediaFailure;
-export type MediaUploadResult = { ok: true; item: Pick<MediaItem, 'key' | 'url'> } | MediaFailure;
+export type MediaUploadResult = { ok: true; item: MediaItem } | MediaFailure;
 export type MediaDeleteResult = { ok: true } | MediaFailure;
 
-const MAX_LIST_PAGES = 50;
-
-function getUploadConfig(): { endpoint: string; clientPrefix: string } | null {
-  const endpoint = import.meta.env.PUBLIC_UPLOAD_ENDPOINT?.replace(/\/+$/, '');
-  const clientPrefix = import.meta.env.PUBLIC_CLIENT_PREFIX?.trim();
-
-  if (!endpoint || !clientPrefix) {
-    return null;
-  }
-
-  return { endpoint, clientPrefix };
-}
-
-export function getUploadSecretStorageKey(): string {
-  const prefix = import.meta.env.PUBLIC_CLIENT_PREFIX?.trim() || 'unconfigured';
-  return `cms_admin_upload_secret_${prefix}`;
-}
-
-export function getStoredUploadSecret(): string | null {
-  if (typeof localStorage === 'undefined') {
-    return null;
-  }
-
-  return localStorage.getItem(getUploadSecretStorageKey());
-}
-
-export function storeUploadSecret(secret: string): void {
-  if (typeof localStorage === 'undefined') {
-    return;
-  }
-
-  localStorage.setItem(getUploadSecretStorageKey(), secret.trim());
-}
-
-export function clearUploadSecret(): void {
-  if (typeof localStorage === 'undefined') {
-    return;
-  }
-
-  localStorage.removeItem(getUploadSecretStorageKey());
-}
+const UPLOADS_ROOT = 'src/assets/uploads';
+const FRONTMATTER_PREFIX = '../../assets/uploads';
+const IMAGE_EXT = /\.(avif|gif|jpe?g|png|svg|webp)$/i;
 
 export function sanitizeFilename(filename: string): string {
   const trimmed = filename.trim();
@@ -87,203 +57,182 @@ export function sanitizeFilename(filename: string): string {
   return `${name || 'arquivo'}${ext}`;
 }
 
+export function isRepoImagePath(value: string): boolean {
+  return /^(?:\.\.\/)+assets\/uploads\//.test(value.trim());
+}
+
+export function toFrontmatterPath(repoPath: string): string {
+  const relative = repoPath.replace(/^src\/assets\/uploads\//, '');
+  return `${FRONTMATTER_PREFIX}/${relative}`;
+}
+
+export function toRepoPath(frontmatterPath: string): string {
+  const trimmed = frontmatterPath.trim();
+
+  if (trimmed.startsWith(UPLOADS_ROOT)) {
+    return trimmed;
+  }
+
+  const match = trimmed.match(/assets\/uploads\/(.+)$/);
+  return match ? `${UPLOADS_ROOT}/${match[1]}` : trimmed;
+}
+
+export function toRawMediaUrl(path: string): string {
+  const config = getPublicRepoConfig();
+  const repoPath = toRepoPath(path);
+
+  if (!config || !repoPath) {
+    return '';
+  }
+
+  return `https://raw.githubusercontent.com/${config.owner}/${config.repo}/${config.branch}/${repoPath}`;
+}
+
+export function toPreviewUrl(path: string): string {
+  const trimmed = path.trim();
+
+  if (!trimmed) {
+    return '';
+  }
+
+  if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith('/')) {
+    return trimmed;
+  }
+
+  return toRawMediaUrl(trimmed);
+}
+
 function missingConfig(): MediaFailure {
   return {
     ok: false,
     code: 'ERROR',
-    error: 'PUBLIC_UPLOAD_ENDPOINT e PUBLIC_CLIENT_PREFIX não estão configurados.',
+    error: 'PUBLIC_GITHUB_OWNER e PUBLIC_GITHUB_REPO não estão configurados.',
   };
 }
 
-function unauthorized(): MediaFailure {
-  return {
-    ok: false,
-    code: 'UNAUTHORIZED',
-    error: 'Upload Secret inválido ou este cliente ainda não foi provisionado.',
-  };
-}
+function extensionForBlob(filename: string, blob: Blob): string {
+  const sanitized = sanitizeFilename(filename);
+  const base = sanitized.replace(/\.[^.]+$/, '') || 'arquivo';
 
-function failureFromResponse(status: number, bodyMessage?: string): MediaFailure {
-  if (status === 401) {
-    return unauthorized();
+  if (blob.type === 'image/svg+xml' || /\.svg$/i.test(filename)) {
+    return sanitized.endsWith('.svg') ? sanitized : `${base}.svg`;
   }
 
-  return {
-    ok: false,
-    code: 'ERROR',
-    error: bodyMessage || `Não foi possível completar a operação (HTTP ${status}).`,
-  };
-}
-
-function authHeaders(secret: string, extra?: HeadersInit): HeadersInit {
-  return {
-    'X-Upload-Secret': secret.trim(),
-    ...extra,
-  };
-}
-
-function asMediaItem(value: unknown): MediaItem | null {
-  if (!value || typeof value !== 'object') {
-    return null;
+  if (blob.type === 'image/webp') {
+    return `${base}.webp`;
   }
 
-  const item = value as Record<string, unknown>;
-
-  if (typeof item.key !== 'string' || typeof item.url !== 'string') {
-    return null;
+  if (blob.type === 'image/jpeg') {
+    return `${base}.jpg`;
   }
 
+  return sanitized;
+}
+
+function yearMonthFolder(now = new Date()): { year: string; month: string } {
   return {
-    key: item.key,
-    url: item.url,
-    size: typeof item.size === 'number' ? item.size : 0,
-    uploaded: typeof item.uploaded === 'string' ? item.uploaded : '',
-    alt: typeof item.alt === 'string' ? item.alt : '',
+    year: String(now.getUTCFullYear()),
+    month: String(now.getUTCMonth() + 1).padStart(2, '0'),
   };
 }
 
-export async function listMedia(secret: string): Promise<MediaListResult> {
-  const config = getUploadConfig();
+function toMediaItem(entry: GitHubDirEntry, alt = ''): MediaItem {
+  return {
+    key: entry.path,
+    path: toFrontmatterPath(entry.path),
+    url: toRawMediaUrl(entry.path),
+    sha: entry.sha,
+    name: entry.name,
+    alt,
+  };
+}
 
-  if (!config) {
-    return missingConfig();
+async function collectImages(token: string, dir: string): Promise<MediaListResult> {
+  const listed = await listDirectory(token, dir);
+
+  if (!listed.ok) {
+    return listed;
   }
 
   const items: MediaItem[] = [];
-  let cursor: string | undefined;
 
-  try {
-    for (let page = 0; page < MAX_LIST_PAGES; page += 1) {
-      const url = new URL(`${config.endpoint}/list`);
-      url.searchParams.set('clientPrefix', config.clientPrefix);
+  for (const entry of listed.entries) {
+    if (entry.type === 'dir') {
+      const nested = await collectImages(token, entry.path);
 
-      if (cursor) {
-        url.searchParams.set('cursor', cursor);
+      if (!nested.ok) {
+        return nested;
       }
 
-      const response = await fetch(url, {
-        headers: authHeaders(secret),
-      });
-      const payload = (await response.json().catch(() => ({}))) as Record<string, unknown> | unknown[];
-
-      if (!response.ok) {
-        return failureFromResponse(
-          response.status,
-          !Array.isArray(payload) && typeof payload.error === 'string' ? payload.error : undefined,
-        );
-      }
-
-      const rawItems = Array.isArray(payload)
-        ? payload
-        : Array.isArray(payload.objects)
-          ? payload.objects
-          : Array.isArray(payload.items)
-            ? payload.items
-            : [];
-
-      for (const raw of rawItems) {
-        const item = asMediaItem(raw);
-
-        if (item) {
-          items.push(item);
-        }
-      }
-
-      const nextCursor =
-        !Array.isArray(payload) && typeof payload.cursor === 'string' && payload.cursor
-          ? payload.cursor
-          : undefined;
-      const truncated = !Array.isArray(payload) && payload.truncated === true;
-
-      if (!truncated || !nextCursor) {
-        break;
-      }
-
-      cursor = nextCursor;
+      items.push(...nested.items);
+      continue;
     }
 
-    return { ok: true, items };
-  } catch {
-    return {
-      ok: false,
-      code: 'ERROR',
-      error: 'Falha de rede ao listar a mídia. Verifique a conexão e tente de novo.',
-    };
+    if (IMAGE_EXT.test(entry.name)) {
+      items.push(toMediaItem(entry));
+    }
   }
+
+  return { ok: true, items };
 }
 
-export async function uploadMedia(
-  secret: string,
-  file: File,
-  filename: string,
-  alt: string,
-): Promise<MediaUploadResult> {
-  const config = getUploadConfig();
-
-  if (!config) {
+export async function listMedia(token: string): Promise<MediaListResult> {
+  if (!getPublicRepoConfig()) {
     return missingConfig();
   }
 
-  const form = new FormData();
-  form.set('file', file);
-  form.set('clientPrefix', config.clientPrefix);
-  form.set('filename', sanitizeFilename(filename));
-  form.set('alt', alt.trim());
-
-  try {
-    const response = await fetch(`${config.endpoint}/upload`, {
-      method: 'POST',
-      headers: authHeaders(secret),
-      body: form,
-    });
-    const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>;
-
-    if (!response.ok) {
-      return failureFromResponse(response.status, typeof payload.error === 'string' ? payload.error : undefined);
-    }
-
-    if (typeof payload.key !== 'string' || typeof payload.url !== 'string') {
-      return { ok: false, code: 'ERROR', error: 'O Worker não devolveu a URL do arquivo enviado.' };
-    }
-
-    return { ok: true, item: { key: payload.key, url: payload.url } };
-  } catch {
-    return {
-      ok: false,
-      code: 'ERROR',
-      error: 'Falha de rede ao enviar o arquivo. Verifique a conexão e tente de novo.',
-    };
-  }
+  return collectImages(token, UPLOADS_ROOT);
 }
 
-export async function deleteMedia(secret: string, key: string): Promise<MediaDeleteResult> {
-  const config = getUploadConfig();
-
-  if (!config) {
+export async function uploadMedia(token: string, file: File, filename: string, alt = ''): Promise<MediaUploadResult> {
+  if (!getPublicRepoConfig()) {
     return missingConfig();
   }
 
   try {
-    const response = await fetch(`${config.endpoint}/upload`, {
-      method: 'DELETE',
-      headers: authHeaders(secret, { 'Content-Type': 'application/json' }),
-      body: JSON.stringify({
-        clientPrefix: config.clientPrefix,
-        key,
-      }),
-    });
-    const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+    const compressed = file.type === 'image/svg+xml' || /\.svg$/i.test(file.name)
+      ? { blob: file, width: 0, height: 0 }
+      : await compressImage(file);
 
-    if (!response.ok) {
-      return failureFromResponse(response.status, typeof payload.error === 'string' ? payload.error : undefined);
+    const { year, month } = yearMonthFolder();
+    const safeName = extensionForBlob(filename || file.name, compressed.blob);
+    const repoPath = `${UPLOADS_ROOT}/${year}/${month}/${safeName}`;
+    const bytes = new Uint8Array(await compressed.blob.arrayBuffer());
+    const existing = await getFileContent(token, repoPath);
+    const sha = existing.ok ? existing.sha : undefined;
+    const result = await createOrUpdateFile(
+      token,
+      repoPath,
+      bytes,
+      `cms: enviar mídia ${safeName}`,
+      sha,
+    );
+
+    if (!result.ok) {
+      return result;
     }
 
-    return { ok: true };
-  } catch {
+    const item: MediaItem = {
+      key: repoPath,
+      path: toFrontmatterPath(repoPath),
+      url: toRawMediaUrl(repoPath),
+      sha: sha ?? '',
+      name: safeName,
+      alt: alt.trim(),
+    };
+
+    return { ok: true, item };
+  } catch (error) {
     return {
       ok: false,
       code: 'ERROR',
-      error: 'Falha de rede ao excluir o arquivo. Verifique a conexão e tente de novo.',
+      error: error instanceof Error ? error.message : 'Não foi possível enviar a imagem.',
     };
   }
+}
+
+export async function deleteMedia(token: string, path: string, sha: string): Promise<MediaDeleteResult> {
+  const repoPath = toRepoPath(path);
+  const name = repoPath.split('/').filter(Boolean).at(-1) ?? repoPath;
+  return deleteFile(token, repoPath, sha, `cms: excluir mídia ${name}`);
 }

@@ -8,7 +8,7 @@ blocks:
   - type: hero
     heading: Bem-vindo ao Site Exemplo
     subheading: Template Astro estático com conteúdo versionado no próprio repositório.
-    image: https://picsum.photos/id/1016/1200/800
+    image: ../../assets/uploads/exemplo/placeholder.webp
     cta:
       label: Ler o blog
       href: /blog
@@ -17,8 +17,8 @@ blocks:
     body: Conteúdo de apoio em **markdown** para a home. O H1 continua sendo o `title`, enquanto `seoTitle` controla a tag title.
   - type: gallery
     images:
-      - src: https://picsum.photos/id/1018/800/600
+      - src: ../../assets/uploads/exemplo/placeholder.webp
         alt: Composição em azul do acervo de exemplo
-      - src: https://picsum.photos/id/1025/800/600
-        alt: Composição em cinza do acervo de exemplo
+      - src: ../../assets/uploads/exemplo/placeholder.webp
+        alt: Segunda composição do acervo de exemplo
 ---

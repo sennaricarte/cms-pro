@@ -1,20 +1,10 @@
 import { useEffect, useState } from 'preact/hooks';
-import {
-  deleteMedia,
-  getStoredUploadSecret,
-  listMedia,
-  uploadMedia,
-  type MediaItem,
-} from '../lib/media-client';
+import { deleteMedia, listMedia, uploadMedia, type MediaItem } from '../lib/media-client';
 
 interface Props {
+  token: string;
   selectMode?: boolean;
   onSelect?: (item: MediaItem) => void;
-}
-
-function filenameFromKey(key: string): string {
-  const parts = key.split('/').filter(Boolean);
-  return parts.at(-1) ?? key;
 }
 
 async function copyText(value: string): Promise<boolean> {
@@ -26,7 +16,7 @@ async function copyText(value: string): Promise<boolean> {
   }
 }
 
-export default function MediaLibrary({ selectMode = false, onSelect }: Props) {
+export default function MediaLibrary({ token, selectMode = false, onSelect }: Props) {
   const [items, setItems] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
@@ -39,18 +29,10 @@ export default function MediaLibrary({ selectMode = false, onSelect }: Props) {
   const [actionMessage, setActionMessage] = useState('');
 
   async function refreshList() {
-    const secret = getStoredUploadSecret();
-
-    if (!secret) {
-      setLoading(false);
-      setErrorMessage('Upload Secret não encontrado. Recarregue e informe o código de novo.');
-      return;
-    }
-
     setLoading(true);
     setErrorMessage('');
 
-    const result = await listMedia(secret);
+    const result = await listMedia(token);
 
     if (!result.ok) {
       setLoading(false);
@@ -64,14 +46,12 @@ export default function MediaLibrary({ selectMode = false, onSelect }: Props) {
 
   useEffect(() => {
     void refreshList();
-  }, []);
+  }, [token]);
 
   async function handleUpload(event: Event) {
     event.preventDefault();
 
-    const secret = getStoredUploadSecret();
-
-    if (!secret || !file || !alt.trim()) {
+    if (!file || !alt.trim()) {
       return;
     }
 
@@ -79,7 +59,7 @@ export default function MediaLibrary({ selectMode = false, onSelect }: Props) {
     setActionMessage('');
     setErrorMessage('');
 
-    const result = await uploadMedia(secret, file, file.name, alt.trim());
+    const result = await uploadMedia(token, file, file.name, alt.trim());
 
     if (!result.ok) {
       setUploading(false);
@@ -90,22 +70,20 @@ export default function MediaLibrary({ selectMode = false, onSelect }: Props) {
     setFile(null);
     setAlt('');
     setUploading(false);
-    setActionMessage('Imagem enviada.');
+    setActionMessage('Imagem enviada e commitada no repositório.');
     await refreshList();
   }
 
   async function confirmDelete(item: MediaItem) {
-    const secret = getStoredUploadSecret();
-
-    if (!secret) {
-      setErrorMessage('Upload Secret não encontrado. Recarregue e informe o código de novo.');
+    if (!item.sha) {
+      setErrorMessage('Não foi possível excluir: SHA do arquivo ausente. Recarregue a lista.');
       return;
     }
 
     setDeletingKey(item.key);
     setActionMessage('');
 
-    const result = await deleteMedia(secret, item.key);
+    const result = await deleteMedia(token, item.key, item.sha);
 
     setDeletingKey(null);
     setPendingDelete(null);
@@ -116,13 +94,13 @@ export default function MediaLibrary({ selectMode = false, onSelect }: Props) {
     }
 
     setItems((current) => current.filter((entry) => entry.key !== item.key));
-    setActionMessage(`${filenameFromKey(item.key)} foi excluído.`);
+    setActionMessage(`${item.name} foi excluído.`);
   }
 
   async function handleCopy(item: MediaItem) {
-    const ok = await copyText(item.url);
+    const ok = await copyText(item.path);
     setCopiedKey(ok ? item.key : null);
-    setActionMessage(ok ? 'URL copiada.' : 'Não foi possível copiar a URL.');
+    setActionMessage(ok ? 'Caminho copiado.' : 'Não foi possível copiar o caminho.');
   }
 
   const canUpload = Boolean(file && alt.trim()) && !uploading;
@@ -157,7 +135,10 @@ export default function MediaLibrary({ selectMode = false, onSelect }: Props) {
             disabled={uploading}
             required
           />
-          <p class="admin-field__hint">Obrigatório para habilitar o envio.</p>
+          <p class="admin-field__hint">
+            Raster (JPG/PNG/WebP) é comprimido no navegador para WebP antes do commit. SVG segue
+            intacto.
+          </p>
         </div>
         <button type="submit" class="admin-button" disabled={!canUpload}>
           {uploading ? 'Enviando…' : 'Enviar'}
@@ -165,7 +146,7 @@ export default function MediaLibrary({ selectMode = false, onSelect }: Props) {
         {uploading ? (
           <p class="admin-media-upload__status" aria-live="polite">
             <span class="admin-spinner" aria-hidden="true" />
-            Enviando arquivo…
+            Comprimindo e commitando…
           </p>
         ) : null}
       </form>
@@ -192,19 +173,12 @@ export default function MediaLibrary({ selectMode = false, onSelect }: Props) {
         <ul class="admin-media-grid">
           {items.map((item) => (
             <li key={item.key} class="admin-media-card">
-              <img src={item.url} alt={item.alt || filenameFromKey(item.key)} />
-              <p class="admin-media-card__name">{filenameFromKey(item.key)}</p>
-              <label class="admin-media-card__alt">
-                <span>Texto alternativo</span>
-                <input type="text" value={item.alt} readOnly />
-              </label>
+              <img src={item.url} alt={item.alt || item.name} />
+              <p class="admin-media-card__name">{item.name}</p>
+              <p class="admin-field__hint">{item.path}</p>
               <div class="admin-list__actions">
                 {selectMode ? (
-                  <button
-                    type="button"
-                    class="admin-button"
-                    onClick={() => onSelect?.(item)}
-                  >
+                  <button type="button" class="admin-button" onClick={() => onSelect?.(item)}>
                     Usar esta imagem
                   </button>
                 ) : pendingDelete === item.key ? (
@@ -234,7 +208,7 @@ export default function MediaLibrary({ selectMode = false, onSelect }: Props) {
                       class="admin-button admin-button--ghost"
                       onClick={() => void handleCopy(item)}
                     >
-                      {copiedKey === item.key ? 'Copiado' : 'Copiar URL'}
+                      {copiedKey === item.key ? 'Copiado' : 'Copiar caminho'}
                     </button>
                     <button
                       type="button"

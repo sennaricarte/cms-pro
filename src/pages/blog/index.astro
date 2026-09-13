@@ -23,7 +23,6 @@ const articles = (await getCollection('articles')).sort(
                 <a href={`/blog/${article.data.slug}`}>
                   <Image
                     src={article.data.featuredImage.src}
-                    inferSize
                     alt={article.data.featuredImage.alt}
                     format="webp"
                     quality="mid"

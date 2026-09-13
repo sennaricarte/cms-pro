@@ -9,33 +9,10 @@ const hexColor = z
 const seoTitle = z.string();
 const metaDescription = z.string().max(160);
 
-const heroBlock = z.object({
-  type: z.literal('hero'),
-  heading: z.string(),
-  subheading: z.string().optional(),
-  image: z.string().url(),
-  cta: z
-    .object({
-      label: z.string(),
-      href: z.string(),
-    })
-    .optional(),
-});
-
 const textBlock = z.object({
   type: z.literal('text'),
   heading: z.string().optional(),
   body: z.string(),
-});
-
-const galleryBlock = z.object({
-  type: z.literal('gallery'),
-  images: z.array(
-    z.object({
-      src: z.string().url(),
-      alt: z.string(),
-    }),
-  ),
 });
 
 const ctaBlock = z.object({
@@ -48,36 +25,64 @@ const ctaBlock = z.object({
 
 const pages = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/pages' }),
-  schema: z.object({
-    title: z.string(),
-    slug: z.string(),
-    seoTitle,
-    metaDescription,
-    ogImage: z.string().optional(),
-    blocks: z.array(z.discriminatedUnion('type', [heroBlock, textBlock, galleryBlock, ctaBlock])),
-    publishedDate: z.coerce.date(),
-    updatedDate: z.coerce.date().optional(),
-  }),
+  schema: ({ image }) =>
+    z.object({
+      title: z.string(),
+      slug: z.string(),
+      seoTitle,
+      metaDescription,
+      ogImage: z.string().optional(),
+      blocks: z.array(
+        z.discriminatedUnion('type', [
+          z.object({
+            type: z.literal('hero'),
+            heading: z.string(),
+            subheading: z.string().optional(),
+            image: image(),
+            cta: z
+              .object({
+                label: z.string(),
+                href: z.string(),
+              })
+              .optional(),
+          }),
+          textBlock,
+          z.object({
+            type: z.literal('gallery'),
+            images: z.array(
+              z.object({
+                src: image(),
+                alt: z.string(),
+              }),
+            ),
+          }),
+          ctaBlock,
+        ]),
+      ),
+      publishedDate: z.coerce.date(),
+      updatedDate: z.coerce.date().optional(),
+    }),
 });
 
 const articles = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/articles' }),
-  schema: z.object({
-    title: z.string(),
-    slug: z.string(),
-    seoTitle,
-    metaDescription,
-    ogImage: z.string(),
-    excerpt: z.string(),
-    featuredImage: z.object({
-      src: z.string().url(),
-      alt: z.string(),
+  schema: ({ image }) =>
+    z.object({
+      title: z.string(),
+      slug: z.string(),
+      seoTitle,
+      metaDescription,
+      ogImage: z.string(),
+      excerpt: z.string(),
+      featuredImage: z.object({
+        src: image(),
+        alt: z.string(),
+      }),
+      author: z.string(),
+      tags: z.array(z.string()).optional(),
+      publishedDate: z.coerce.date(),
+      updatedDate: z.coerce.date().optional(),
     }),
-    author: z.string(),
-    tags: z.array(z.string()).optional(),
-    publishedDate: z.coerce.date(),
-    updatedDate: z.coerce.date().optional(),
-  }),
 });
 
 const siteSettings = defineCollection({
