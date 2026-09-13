@@ -2,6 +2,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { parseFrontmatter, serializeFrontmatter } from '../lib/frontmatter';
 import { createOrUpdateFile, getFileContent } from '../lib/github-client';
 import { slugify } from '../lib/slugify';
+import ImagePickerField from './ImagePickerField';
 
 interface Props {
   token: string;
@@ -121,7 +122,13 @@ function validateForm(form: FormState): FieldErrors {
   }
 
   if (!form.featuredImageSrc.trim()) {
-    errors.featuredImageSrc = 'Informe o caminho relativo da imagem de destaque.';
+    errors.featuredImageSrc = 'Escolha uma imagem de destaque na biblioteca.';
+  } else {
+    try {
+      new URL(form.featuredImageSrc.trim());
+    } catch {
+      errors.featuredImageSrc = 'A imagem de destaque precisa ser uma URL válida.';
+    }
   }
 
   if (!form.featuredImageAlt.trim()) {
@@ -446,37 +453,21 @@ export default function ArticleEditor({ token, mode, path, onSaved, onCancel }: 
           {errors.excerpt ? <p class="admin-field__error">{errors.excerpt}</p> : null}
         </div>
 
-        <div class="admin-field">
-          <label htmlFor="article-image-src">Imagem de destaque (caminho relativo)</label>
-          <input
-            id="article-image-src"
-            type="text"
-            value={form.featuredImageSrc}
-            onInput={(event) => updateField('featuredImageSrc', (event.target as HTMLInputElement).value)}
-            disabled={saving}
-            spellCheck={false}
-            placeholder="../../assets/uploads/2026/09/arquivo.jpg"
-            required
-          />
-          <p class="admin-field__hint">
-            Upload de mídia chega no próximo passo. Por agora, cole o caminho relativo ao arquivo .md (o
-            `image()` do Astro resolve a partir do markdown, não da raiz do projeto).
-          </p>
-          {errors.featuredImageSrc ? <p class="admin-field__error">{errors.featuredImageSrc}</p> : null}
-        </div>
-
-        <div class="admin-field">
-          <label htmlFor="article-image-alt">Texto alternativo da imagem</label>
-          <input
-            id="article-image-alt"
-            type="text"
-            value={form.featuredImageAlt}
-            onInput={(event) => updateField('featuredImageAlt', (event.target as HTMLInputElement).value)}
-            disabled={saving}
-            required
-          />
-          {errors.featuredImageAlt ? <p class="admin-field__error">{errors.featuredImageAlt}</p> : null}
-        </div>
+        <ImagePickerField
+          label="Imagem de destaque"
+          value={form.featuredImageSrc}
+          altValue={form.featuredImageAlt}
+          required
+          disabled={saving}
+          error={errors.featuredImageSrc || errors.featuredImageAlt}
+          onChange={({ url, alt }) => {
+            setForm((current) => ({
+              ...current,
+              featuredImageSrc: url,
+              featuredImageAlt: alt,
+            }));
+          }}
+        />
 
         <div class="admin-field">
           <label htmlFor="article-author">Autor</label>

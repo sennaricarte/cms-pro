@@ -4,7 +4,7 @@ import '@fontsource/inter/latin-400.css';
 import '@fontsource/inter/latin-600.css';
 import '@fontsource/source-serif-4/latin-400.css';
 import interLatin400 from '@fontsource/inter/files/inter-latin-400-normal.woff2?url';
-import '../styles/tokens.css';
+import tokensCss from '../styles/tokens.css?raw';
 
 interface Props {
   title: string;
@@ -98,6 +98,7 @@ if (organization.sameAs?.length) {
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={ogImageUrl} />
 
+    <style is:inline set:html={tokensCss}></style>
     <style is:inline set:html={themeOverrides}></style>
     <script type="application/ld+json" set:html={JSON.stringify(organizationJsonLd)}></script>
   </head>

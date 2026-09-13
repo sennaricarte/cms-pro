@@ -1,7 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { Picture } from 'astro:assets';
+import { Image } from 'astro:assets';
 import SiteNav from '../../components/SiteNav.astro';
 
 const articles = (await getCollection('articles')).sort(
@@ -21,13 +21,12 @@ const articles = (await getCollection('articles')).sort(
             <li>
               <article class="blog-card">
                 <a href={`/blog/${article.data.slug}`}>
-                  <Picture
+                  <Image
                     src={article.data.featuredImage.src}
+                    inferSize
                     alt={article.data.featuredImage.alt}
-                    formats={['avif', 'webp']}
+                    format="webp"
                     quality="mid"
-                    widths={[640, 960, 1280]}
-                    sizes="(max-width: 800px) 100vw, 48rem"
                     loading="lazy"
                   />
                   <h2>{article.data.title}</h2>

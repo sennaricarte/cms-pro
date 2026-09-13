@@ -8,6 +8,8 @@ interface Props {
   onLogout: () => void;
   onNewArticle: () => void;
   onEditArticle: (path: string) => void;
+  onNewPage: () => void;
+  onEditPage: (path: string) => void;
   flashMessage?: string;
 }
 
@@ -99,6 +101,8 @@ export default function Dashboard({
   onLogout,
   onNewArticle,
   onEditArticle,
+  onNewPage,
+  onEditPage,
   flashMessage,
 }: Props) {
   const [pages, setPages] = useState<SectionState>(emptySection);
@@ -210,6 +214,8 @@ export default function Dashboard({
         onAskDelete={setPendingDelete}
         onCancelDelete={() => setPendingDelete(null)}
         onConfirmDelete={confirmDelete}
+        onCreate={onNewPage}
+        onEdit={onEditPage}
       />
 
       <ContentSection

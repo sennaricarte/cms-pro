@@ -1,11 +1,10 @@
 ---
-import { Picture } from 'astro:assets';
-import type { ImageMetadata } from 'astro';
+import { Image } from 'astro:assets';
 
 interface Props {
   heading: string;
   subheading?: string;
-  image: ImageMetadata;
+  image: string;
   cta?: {
     label: string;
     href: string;
@@ -31,13 +30,12 @@ const HeadingTag = headingLevel === 1 ? 'h1' : 'h2';
     }
   </div>
   <figure class="hero__media">
-    <Picture
+    <Image
       src={image}
+      inferSize
       alt={`Imagem de destaque: ${heading}`}
-      formats={['avif', 'webp']}
+      format="webp"
       quality="mid"
-      widths={[640, 960, 1280, 1600]}
-      sizes="(max-width: 800px) 100vw, 1200px"
       loading={imagePriority ? 'eager' : 'lazy'}
       fetchpriority={imagePriority ? 'high' : 'auto'}
     />

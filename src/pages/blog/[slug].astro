@@ -3,7 +3,7 @@ import type { GetStaticPaths } from 'astro';
 import type { CollectionEntry } from 'astro:content';
 import { getCollection, getEntry, render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { Picture } from 'astro:assets';
+import { Image } from 'astro:assets';
 import SiteNav from '../../components/SiteNav.astro';
 
 export const getStaticPaths = (async () => {
@@ -40,7 +40,7 @@ const blogPostingJsonLd: Record<string, unknown> = {
   '@context': 'https://schema.org',
   '@type': 'BlogPosting',
   headline: entry.data.title,
-  image: toAbsoluteUrl(entry.data.ogImage),
+  image: entry.data.featuredImage.src,
   datePublished: entry.data.publishedDate.toISOString(),
   author: {
     '@type': 'Person',
@@ -71,13 +71,12 @@ if (entry.data.updatedDate) {
       </p>
     </header>
     <figure class="article__featured">
-      <Picture
+      <Image
         src={entry.data.featuredImage.src}
+        inferSize
         alt={entry.data.featuredImage.alt}
-        formats={['avif', 'webp']}
+        format="webp"
         quality="mid"
-        widths={[640, 960, 1280, 1400]}
-        sizes="(max-width: 800px) 100vw, 42rem"
         loading="eager"
         fetchpriority="high"
       />

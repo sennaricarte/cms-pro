@@ -190,18 +190,31 @@ function missingConfig(): ApiFailure {
   };
 }
 
+/**
+ * GitHub Contents API devolve `content` em Base64 de bytes UTF-8.
+ * atob() devolve uma binary string Latin-1 (um byte por char); o
+ * TextDecoder remonta o UTF-8 original.
+ */
 export function decodeBase64Utf8(encoded: string): string {
   const binary = atob(encoded.replace(/\n/g, ''));
-  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0) & 0xff);
   return new TextDecoder('utf-8').decode(bytes);
 }
 
+/**
+ * GitHub Contents API exige `content` em Base64 dos bytes UTF-8 do arquivo.
+ * btoa() só aceita Latin-1 (código 0–255). Passar a string JS direto
+ * ("Comunicação") corrompe ou lança. Codificamos com TextEncoder e só
+ * então fazemos btoa da binary string (um char por byte).
+ */
 export function encodeBase64Utf8(value: string): string {
   const bytes = new TextEncoder().encode(value);
+  const chunkSize = 0x2000;
   let binary = '';
 
-  for (const byte of bytes) {
-    binary += String.fromCharCode(byte);
+  for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+    const chunk = bytes.subarray(offset, offset + chunkSize);
+    binary += String.fromCharCode(...chunk);
   }
 
   return btoa(binary);
