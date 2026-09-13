@@ -173,7 +173,9 @@ export default function MediaLibrary({ token, selectMode = false, onSelect }: Pr
         <ul class="admin-media-grid">
           {items.map((item) => (
             <li key={item.key} class="admin-media-card">
-              <img src={item.url} alt={item.alt || item.name} />
+              <div class="admin-media-card__thumb">
+                <img src={item.url} alt={item.alt || item.name} />
+              </div>
               <p class="admin-media-card__name">{item.name}</p>
               <p class="admin-field__hint">{item.path}</p>
               <div class="admin-list__actions">

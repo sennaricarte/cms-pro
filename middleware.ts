@@ -1,6 +1,11 @@
+import { parseCmsUsers, timingSafeEqual, verifyPassword } from './src/admin/lib/password-hash';
+import usersJson from './src/data/users.json';
+
 export const config = {
   matcher: '/admin/:path*',
 };
+
+const cmsUsers = parseCmsUsers(usersJson);
 
 export default async function middleware(request: Request): Promise<Response | undefined> {
   if (await isAuthorized(request)) {
@@ -20,23 +25,6 @@ export default async function middleware(request: Request): Promise<Response | u
 function readServerEnv(name: string): string {
   const env = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env;
   return env?.[name] ?? '';
-}
-
-async function timingSafeEqual(left: string, right: string): Promise<boolean> {
-  const encoder = new TextEncoder();
-  const [leftDigest, rightDigest] = await Promise.all([
-    crypto.subtle.digest('SHA-256', encoder.encode(left)),
-    crypto.subtle.digest('SHA-256', encoder.encode(right)),
-  ]);
-  const leftBytes = new Uint8Array(leftDigest);
-  const rightBytes = new Uint8Array(rightDigest);
-  let mismatch = 0;
-
-  for (let i = 0; i < leftBytes.length; i++) {
-    mismatch |= leftBytes[i] ^ rightBytes[i];
-  }
-
-  return mismatch === 0;
 }
 
 function parseBasicAuth(header: string | null): { user: string; password: string } | null {
@@ -70,16 +58,42 @@ function parseBasicAuth(header: string | null): { user: string; password: string
   };
 }
 
-async function isAuthorized(request: Request): Promise<boolean> {
+async function matchesMaster(user: string, password: string): Promise<boolean> {
   const expectedUser = readServerEnv('ADMIN_BASIC_AUTH_USER');
   const expectedPassword = readServerEnv('ADMIN_BASIC_AUTH_PASSWORD');
-  const parsed = parseBasicAuth(request.headers.get('Authorization'));
 
+  if (!expectedUser || !expectedPassword) {
+    return false;
+  }
+
+  const userOk = await timingSafeEqual(user, expectedUser);
+  const passwordOk = await timingSafeEqual(password, expectedPassword);
+
+  return userOk && passwordOk;
+}
+
+async function matchesCmsUser(user: string, password: string): Promise<boolean> {
+  const record = cmsUsers.find((entry) => entry.username === user);
+
+  if (!record) {
+    return false;
+  }
+
+  try {
+    return await verifyPassword(password, record.salt, record.hash);
+  } catch {
+    return false;
+  }
+}
+
+async function isAuthorized(request: Request): Promise<boolean> {
+  const parsed = parseBasicAuth(request.headers.get('Authorization'));
   const providedUser = parsed?.user ?? '';
   const providedPassword = parsed?.password ?? '';
 
-  const userOk = await timingSafeEqual(providedUser, expectedUser);
-  const passwordOk = await timingSafeEqual(providedPassword, expectedPassword);
+  if (await matchesMaster(providedUser, providedPassword)) {
+    return true;
+  }
 
-  return Boolean(expectedUser && expectedPassword && userOk && passwordOk);
+  return matchesCmsUser(providedUser, providedPassword);
 }

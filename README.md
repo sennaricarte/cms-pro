@@ -53,7 +53,9 @@ O Personal Access Token do GitHub **não** é variável de ambiente. O cliente c
 
 Dispare o primeiro deploy na Vercel (o que o import do projeto já faz, ou um Redeploy). Confirme que o site público sobe e que `https://SEU-DOMINIO/admin` pede o Basic Auth.
 
-O Edge Middleware (`middleware.ts`, matcher `/admin/:path*`) **não se comporta igual** em `pnpm dev` / `pnpm preview`. A proteção Basic só vale no deploy real.
+O Edge Middleware (`middleware.ts`, matcher `/admin/:path*`) **não se comporta igual** em `pnpm dev` / `pnpm preview`. A proteção Basic (conta mestre e usuários de `src/data/users.json`) só vale no deploy real — o `pnpm build` local valida o Astro, não o Edge da Vercel.
+
+A conta mestre continua em `ADMIN_BASIC_AUTH_USER` / `ADMIN_BASIC_AUTH_PASSWORD`. Usuários extras são geridos na aba **Usuários** do admin: o save grava hashes PBKDF2 em `src/data/users.json` e só passam a autenticar depois do deploy automático (~1 minuto).
 
 ### 6. Deploy Hook (rebuild depois que o admin salva)
 
@@ -111,4 +113,5 @@ Esse PAT é o segundo login do `/admin` (depois do Basic Auth). Não compartilhe
 - **Upload de mídia falha com erro de CORS:** o domínio de produção não está em `ALLOWED_ORIGINS`. Volte ao passo 7 e faça `wrangler deploy`.
 - **Upload retorna 401 "Cliente não provisionado":** falta o passo 2, ou `PUBLIC_CLIENT_PREFIX` na Vercel é diferente da chave gravada no KV.
 - **`git push` rejeitado (non-fast-forward):** o admin também commita neste repositório. Rode `git pull` (ou `git pull --rebase`) antes de enviar de novo; não use force push em `main`.
-- **Basic Auth não aparece em `pnpm dev` / `pnpm preview`:** esperado. O `middleware.ts` só roda no Edge da Vercel após o deploy.
+- **Basic Auth não aparece em `pnpm dev` / `pnpm preview`:** esperado. O `middleware.ts` só roda no Edge da Vercel após o deploy — o mesmo vale para usuários criados na aba Usuários.
+- **Usuário novo do admin ainda não entra no Basic Auth:** o middleware só vê o `users.json` do último build. Espere o deploy automático (~1 min) ou dispare um Redeploy. O mesmo vale para usuários criados na aba Usuários: o hash só é lido no próximo build do middleware.

@@ -518,6 +518,7 @@ const { title = 'Admin' } = Astro.props;
   .admin-media-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+    align-items: start;
     gap: 1rem;
     list-style: none;
     padding: 0;
@@ -527,9 +528,24 @@ const { title = 'Admin' } = Astro.props;
     display: grid;
     gap: 0.55rem;
     align-content: start;
+    min-width: 0;
+    overflow: hidden;
   }
 
-  .admin-media-card img,
+  .admin-media-card__thumb {
+    height: 200px;
+    overflow: hidden;
+    border-radius: 0.5rem;
+    background: var(--admin-bg);
+  }
+
+  .admin-media-card__thumb img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
   .admin-media-picked img {
     width: 100%;
     aspect-ratio: 1;

@@ -1,0 +1,8 @@
+[
+  {
+    "username": "editor1",
+    "salt": "base64...",
+    "hash": "base64...",
+    "createdAt": "2026-09-13"
+  }
+]

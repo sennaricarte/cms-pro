@@ -6,11 +6,13 @@ import LoginScreen from './LoginScreen';
 import MediaLibrary from './MediaLibrary';
 import PageEditor from './PageEditor';
 import SiteSettingsEditor from './SiteSettingsEditor';
+import UsersEditor from './UsersEditor';
 
 type View =
   | { name: 'dashboard' }
   | { name: 'media' }
   | { name: 'settings' }
+  | { name: 'users' }
   | { name: 'article-editor'; mode: 'create' | 'edit'; path?: string }
   | { name: 'page-editor'; mode: 'create' | 'edit'; path?: string };
 
@@ -102,9 +104,33 @@ export default function AdminApp() {
         >
           Configurações
         </button>
+        <button
+          type="button"
+          class={`admin-tabs__item${view.name === 'users' ? ' is-active' : ''}`}
+          aria-current={view.name === 'users' ? 'page' : undefined}
+          onClick={() => {
+            setFlash('');
+            setView({ name: 'users' });
+          }}
+        >
+          Usuários
+        </button>
       </nav>
 
-      {view.name === 'settings' ? (
+      {view.name === 'users' ? (
+        <div class="admin-dashboard">
+          <header class="admin-dashboard__header">
+            <div>
+              <p class="admin-dashboard__eyebrow">Admin</p>
+              <h1>Usuários do painel</h1>
+            </div>
+            <button type="button" class="admin-button admin-button--ghost" onClick={logout}>
+              Sair
+            </button>
+          </header>
+          <UsersEditor token={session.token} />
+        </div>
+      ) : view.name === 'settings' ? (
         <div class="admin-dashboard">
           <header class="admin-dashboard__header">
             <div>
