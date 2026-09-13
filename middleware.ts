@@ -1,4 +1,4 @@
-import { parseCmsUsers, timingSafeEqual, verifyPassword } from './src/admin/lib/password-hash';
+import { parseCmsUsers, timingSafeEqual, verifyPassword } from './src/admin/lib/password-hash.js';
 import usersJson from './src/data/users.json';
 
 export const config = {
