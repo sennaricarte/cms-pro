@@ -1,5 +1,5 @@
 import { parseCmsUsers, timingSafeEqual, verifyPassword } from './src/admin/lib/password-hash.js';
-import usersJson from './src/data/users.json';
+import usersJson from './src/data/users.json' with { type: 'json' };
 
 export const config = {
   matcher: '/admin/:path*',
