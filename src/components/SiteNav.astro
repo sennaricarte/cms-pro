@@ -1,0 +1,25 @@
+<nav class="site-nav" aria-label="Principal">
+  <a href="/">Início</a>
+  <a href="/blog">Blog</a>
+</nav>
+
+<style>
+  .site-nav {
+    display: flex;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid color-mix(in srgb, var(--color-text) 12%, transparent);
+  }
+
+  .site-nav a {
+    color: var(--color-primary);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .site-nav a:hover,
+  .site-nav a:focus-visible {
+    color: var(--color-accent);
+    text-decoration: underline;
+  }
+</style>

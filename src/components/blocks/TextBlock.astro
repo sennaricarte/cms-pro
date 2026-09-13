@@ -1,0 +1,57 @@
+---
+import { Marked } from 'marked';
+
+interface Props {
+  heading?: string;
+  body: string;
+  headingLevel?: 1 | 2;
+}
+
+const { heading, body, headingLevel = 2 } = Astro.props;
+const HeadingTag = headingLevel === 1 ? 'h1' : 'h2';
+
+const markdown = new Marked({
+  renderer: {
+    html() {
+      return '';
+    },
+    heading({ text, depth }) {
+      const level = Math.min(depth + 2, 6);
+      return `<h${level}>${text}</h${level}>`;
+    },
+  },
+});
+
+const html = markdown.parse(body, { async: false });
+---
+
+<section class="text-block">
+  {heading && <HeadingTag>{heading}</HeadingTag>}
+  <div class="text-block__body" set:html={html} />
+</section>
+
+<style>
+  .text-block {
+    padding: var(--space-5) var(--space-4);
+    max-width: 42rem;
+  }
+
+  .text-block :is(h1, h2) {
+    font-family: var(--font-secondary);
+    margin-bottom: var(--space-2);
+    color: var(--color-primary);
+  }
+
+  .text-block__body :global(p + p) {
+    margin-top: var(--space-2);
+  }
+
+  .text-block__body :global(:is(h3, h4, h5, h6)) {
+    margin-top: var(--space-3);
+    margin-bottom: var(--space-1);
+  }
+
+  .text-block__body :global(a) {
+    color: var(--color-accent);
+  }
+</style>

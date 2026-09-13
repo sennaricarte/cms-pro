@@ -1,0 +1,87 @@
+---
+import type { GetStaticPaths } from 'astro';
+import type { CollectionEntry } from 'astro:content';
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SiteNav from '../components/SiteNav.astro';
+import Hero from '../components/blocks/Hero.astro';
+import TextBlock from '../components/blocks/TextBlock.astro';
+import Gallery from '../components/blocks/Gallery.astro';
+import CtaBlock from '../components/blocks/CtaBlock.astro';
+
+export const getStaticPaths = (async () => {
+  const pages = await getCollection('pages');
+
+  return pages.map((entry) => ({
+    params: {
+      slug: entry.data.slug === 'home' ? undefined : entry.data.slug,
+    },
+    props: { entry },
+  }));
+}) satisfies GetStaticPaths;
+
+interface Props {
+  entry: CollectionEntry<'pages'>;
+}
+
+const { entry } = Astro.props;
+const isHome = entry.data.slug === 'home';
+const firstHeroIndex = entry.data.blocks.findIndex((block) => block.type === 'hero');
+const canonicalPath = `/${entry.data.slug === 'home' ? '' : entry.data.slug}`;
+---
+
+<BaseLayout
+  title={entry.data.seoTitle}
+  description={entry.data.metaDescription}
+  ogImage={entry.data.ogImage}
+  canonicalPath={canonicalPath}
+>
+  <SiteNav />
+  <main>
+    <h1 class="page-title">{entry.data.title}</h1>
+    {
+      entry.data.blocks.map((block, index) => {
+        switch (block.type) {
+          case 'hero':
+            return (
+              <Hero
+                heading={block.heading}
+                subheading={block.subheading}
+                image={block.image}
+                cta={block.cta}
+                headingLevel={2}
+                imagePriority={isHome && index === firstHeroIndex}
+              />
+            );
+          case 'text':
+            return <TextBlock heading={block.heading} body={block.body} headingLevel={2} />;
+          case 'gallery':
+            return <Gallery images={block.images} />;
+          case 'cta':
+            return (
+              <CtaBlock
+                heading={block.heading}
+                body={block.body}
+                buttonLabel={block.buttonLabel}
+                buttonHref={block.buttonHref}
+                headingLevel={2}
+              />
+            );
+          default:
+            return null;
+        }
+      })
+    }
+  </main>
+</BaseLayout>
+
+<style>
+  .page-title {
+    padding: var(--space-4) var(--space-4) 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-secondary);
+  }
+</style>

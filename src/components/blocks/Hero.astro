@@ -1,0 +1,96 @@
+---
+import { Picture } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+interface Props {
+  heading: string;
+  subheading?: string;
+  image: ImageMetadata;
+  cta?: {
+    label: string;
+    href: string;
+  };
+  headingLevel?: 1 | 2;
+  imagePriority?: boolean;
+}
+
+const { heading, subheading, image, cta, headingLevel = 2, imagePriority = false } = Astro.props;
+const HeadingTag = headingLevel === 1 ? 'h1' : 'h2';
+---
+
+<section class="hero">
+  <div class="hero__content">
+    <HeadingTag>{heading}</HeadingTag>
+    {subheading && <p class="hero__subheading">{subheading}</p>}
+    {
+      cta && (
+        <a class="hero__cta" href={cta.href}>
+          {cta.label}
+        </a>
+      )
+    }
+  </div>
+  <figure class="hero__media">
+    <Picture
+      src={image}
+      alt={`Imagem de destaque: ${heading}`}
+      formats={['avif', 'webp']}
+      quality="mid"
+      widths={[640, 960, 1280, 1600]}
+      sizes="(max-width: 800px) 100vw, 1200px"
+      loading={imagePriority ? 'eager' : 'lazy'}
+      fetchpriority={imagePriority ? 'high' : 'auto'}
+    />
+  </figure>
+</section>
+
+<style>
+  .hero {
+    display: grid;
+    gap: var(--space-4);
+    padding: var(--space-6) var(--space-4);
+    align-items: center;
+  }
+
+  @media (min-width: 768px) {
+    .hero {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .hero__content :is(h1, h2) {
+    font-family: var(--font-secondary);
+    font-size: clamp(1.75rem, 4vw, 2.75rem);
+    line-height: 1.2;
+    color: var(--color-primary);
+  }
+
+  .hero__subheading {
+    margin-top: var(--space-2);
+    color: var(--color-secondary);
+    font-size: 1.125rem;
+  }
+
+  .hero__cta {
+    display: inline-block;
+    margin-top: var(--space-3);
+    padding: 0.75rem 1.25rem;
+    background: var(--color-accent);
+    color: #fff;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 0.375rem;
+  }
+
+  .hero__cta:hover,
+  .hero__cta:focus-visible {
+    filter: brightness(1.08);
+  }
+
+  .hero__media :global(img) {
+    width: 100%;
+    height: auto;
+    border-radius: 0.75rem;
+    object-fit: cover;
+  }
+</style>

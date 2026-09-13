@@ -1,0 +1,10 @@
+---
+import AdminShell from '../../admin/AdminShell.astro';
+import AdminApp from '../../admin/components/AdminApp';
+---
+
+<AdminShell title="Admin">
+  <!-- client:only: nenhuma chamada à API do GitHub acontece no build.
+       AdminApp troca LoginScreen por Dashboard(token, repoName) só no browser. -->
+  <AdminApp client:only="preact" />
+</AdminShell>

@@ -1,0 +1,38 @@
+:root {
+  --color-primary: #1f2937;
+  --color-secondary: #4b5563;
+  --color-accent: #2563eb;
+  --color-background: #ffffff;
+  --color-text: #111827;
+  --font-primary: 'Inter', system-ui, sans-serif;
+  --font-secondary: 'Source Serif 4', Georgia, serif;
+
+  --space-1: 0.5rem;
+  --space-2: 1rem;
+  --space-3: 1.5rem;
+  --space-4: 2rem;
+  --space-5: 2.5rem;
+  --space-6: 3rem;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+img,
+picture {
+  max-width: 100%;
+  height: auto;
+}
+
+body {
+  font-family: var(--font-primary);
+  background-color: var(--color-background);
+  color: var(--color-text);
+}

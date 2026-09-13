@@ -1,0 +1,107 @@
+---
+import { getEntry } from 'astro:content';
+import '@fontsource/inter/latin-400.css';
+import '@fontsource/inter/latin-600.css';
+import '@fontsource/source-serif-4/latin-400.css';
+import interLatin400 from '@fontsource/inter/files/inter-latin-400-normal.woff2?url';
+import '../styles/tokens.css';
+
+interface Props {
+  title: string;
+  description: string;
+  ogImage?: string;
+  canonicalPath: string;
+}
+
+const { title, description, ogImage, canonicalPath } = Astro.props;
+
+const settings = await getEntry('siteSettings', 'default');
+
+if (!settings) {
+  throw new Error('A entry siteSettings com id "default" não foi encontrada.');
+}
+
+const { siteName, siteUrl, logo, colors, fonts, organization } = settings.data;
+
+function toAbsoluteUrl(path: string): string {
+  if (/^https?:\/\//i.test(path)) {
+    return path;
+  }
+
+  return new URL(path, siteUrl.endsWith('/') ? siteUrl : `${siteUrl}/`).href;
+}
+
+function quoteFontFamily(family: string): string {
+  const safeName = family.replaceAll('"', '');
+  return family.includes(' ') ? `"${safeName}"` : safeName;
+}
+
+const documentTitle = `${title} | ${siteName}`;
+const canonicalUrl = toAbsoluteUrl(canonicalPath);
+const ogImageUrl = toAbsoluteUrl(ogImage ?? logo.path);
+const secondaryFamily = fonts.secondaryFamily ?? fonts.primaryFamily;
+
+const themeOverrides = `:root {
+  --color-primary: ${colors.primary};
+  --color-secondary: ${colors.secondary};
+  --color-accent: ${colors.accent};
+  --color-background: ${colors.background};
+  --color-text: ${colors.text};
+  --font-primary: ${quoteFontFamily(fonts.primaryFamily)}, system-ui, sans-serif;
+  --font-secondary: ${quoteFontFamily(secondaryFamily)}, Georgia, serif;
+}`;
+
+const organizationJsonLd: Record<string, unknown> = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+};
+
+if (organization.legalName) {
+  organizationJsonLd.legalName = organization.legalName;
+}
+
+if (organization.logo) {
+  organizationJsonLd.logo = organization.logo;
+}
+
+if (organization.sameAs?.length) {
+  organizationJsonLd.sameAs = organization.sameAs;
+}
+---
+
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{documentTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
+    <link rel="icon" href={logo.path} />
+    <link
+      rel="preload"
+      href={interLatin400}
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={siteName} />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageUrl} />
+
+    <style is:inline set:html={themeOverrides}></style>
+    <script type="application/ld+json" set:html={JSON.stringify(organizationJsonLd)}></script>
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

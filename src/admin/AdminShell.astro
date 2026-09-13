@@ -1,0 +1,338 @@
+---
+interface Props {
+  title?: string;
+}
+
+const { title = 'Admin' } = Astro.props;
+---
+
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <div class="admin-shell">
+      <slot />
+      <p class="admin-footnote">
+        O token fica no localStorage deste navegador. Use um PAT fine-grained restrito a este
+        único repositório, com permissão apenas de Contents (read/write), e defina uma data de
+        expiração ao gerá-lo no GitHub.
+      </p>
+    </div>
+  </body>
+</html>
+
+<style is:global>
+  :root {
+    --admin-bg: #f3f4f6;
+    --admin-card: #ffffff;
+    --admin-text: #111827;
+    --admin-muted: #6b7280;
+    --admin-accent: #2563eb;
+    --admin-danger: #b91c1c;
+    --admin-border: #e5e7eb;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  * {
+    margin: 0;
+  }
+
+  body {
+    min-height: 100vh;
+    font-family: system-ui, sans-serif;
+    background: var(--admin-bg);
+    color: var(--admin-text);
+  }
+
+  .admin-shell {
+    max-width: 48rem;
+    margin: 0 auto;
+    padding: 3rem 1.25rem;
+  }
+
+  .admin-card {
+    background: var(--admin-card);
+    border: 1px solid var(--admin-border);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+  }
+
+  .admin-card h1 {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .admin-card p {
+    color: var(--admin-muted);
+    margin-bottom: 1rem;
+    line-height: 1.5;
+  }
+
+  .admin-card form {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .admin-card label {
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  .admin-card input,
+  .admin-textarea {
+    width: 100%;
+    padding: 0.65rem 0.75rem;
+    border: 1px solid var(--admin-border);
+    border-radius: 0.375rem;
+    font: inherit;
+    background: #fff;
+  }
+
+  .admin-textarea {
+    resize: vertical;
+    line-height: 1.5;
+  }
+
+  .admin-textarea--body {
+    min-height: 18rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.875rem;
+  }
+
+  .admin-button {
+    margin-top: 0.5rem;
+    padding: 0.7rem 1rem;
+    border: 0;
+    border-radius: 0.375rem;
+    background: var(--admin-accent);
+    color: #fff;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .admin-button:disabled {
+    opacity: 0.65;
+    cursor: wait;
+  }
+
+  .admin-button--ghost {
+    background: transparent;
+    color: var(--admin-text);
+    border: 1px solid var(--admin-border);
+  }
+
+  .admin-error {
+    margin-top: 1rem;
+    color: var(--admin-danger);
+  }
+
+  .admin-footnote {
+    margin-top: 1.5rem;
+    color: var(--admin-muted);
+    font-size: 0.75rem;
+    line-height: 1.5;
+  }
+
+  .admin-dashboard {
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  .admin-dashboard__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .admin-dashboard__eyebrow {
+    color: var(--admin-muted);
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 0.25rem;
+  }
+
+  .admin-banner {
+    background: #fef3c7;
+    color: #92400e;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.9375rem;
+  }
+
+  .admin-banner--info {
+    background: #eff6ff;
+    color: #1e3a8a;
+  }
+
+  .admin-section + .admin-section {
+    margin-top: 0;
+  }
+
+  .admin-section__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .admin-section__header h2 {
+    font-size: 1.1rem;
+  }
+
+  .admin-section__header .admin-button {
+    margin-top: 0;
+  }
+
+  .admin-empty {
+    color: var(--admin-muted);
+    margin: 0;
+  }
+
+  .admin-skeleton {
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .admin-skeleton span {
+    display: block;
+    height: 2.5rem;
+    border-radius: 0.375rem;
+    background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+    background-size: 200% 100%;
+    animation: admin-shimmer 1.2s ease-in-out infinite;
+  }
+
+  @keyframes admin-shimmer {
+    0% {
+      background-position: 100% 0;
+    }
+    100% {
+      background-position: -100% 0;
+    }
+  }
+
+  .admin-list {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .admin-list__item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--admin-border);
+  }
+
+  .admin-list__item:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .admin-list__name {
+    font-weight: 600;
+  }
+
+  .admin-editor {
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  .admin-editor__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .admin-editor__header .admin-button {
+    margin-top: 0;
+  }
+
+  .admin-card.admin-form {
+    display: grid;
+    gap: 1.1rem;
+  }
+
+  .admin-field {
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .admin-field label {
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  .admin-card .admin-field__hint,
+  .admin-card .admin-field__count {
+    margin: 0;
+    color: var(--admin-muted);
+    font-size: 0.8125rem;
+    line-height: 1.45;
+  }
+
+  .admin-field__count--warn,
+  .admin-field__error {
+    color: var(--admin-danger);
+  }
+
+  .admin-field__error {
+    margin: 0;
+    font-size: 0.8125rem;
+  }
+
+  .admin-field__hint code {
+    font-size: 0.8125rem;
+  }
+
+  .admin-editor__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .admin-editor__actions .admin-button {
+    margin-top: 0;
+  }
+
+  .admin-list__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .admin-list__actions .admin-button {
+    margin-top: 0;
+    padding: 0.45rem 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  .admin-list__confirm {
+    font-size: 0.875rem;
+    color: var(--admin-danger);
+  }
+
+  .admin-button--danger {
+    background: var(--admin-danger);
+  }
+</style>

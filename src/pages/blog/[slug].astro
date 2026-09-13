@@ -1,0 +1,165 @@
+---
+import type { GetStaticPaths } from 'astro';
+import type { CollectionEntry } from 'astro:content';
+import { getCollection, getEntry, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { Picture } from 'astro:assets';
+import SiteNav from '../../components/SiteNav.astro';
+
+export const getStaticPaths = (async () => {
+  const articles = await getCollection('articles');
+
+  return articles.map((entry) => ({
+    params: { slug: entry.data.slug },
+    props: { entry },
+  }));
+}) satisfies GetStaticPaths;
+
+interface Props {
+  entry: CollectionEntry<'articles'>;
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const settings = await getEntry('siteSettings', 'default');
+
+if (!settings) {
+  throw new Error('A entry siteSettings com id "default" não foi encontrada.');
+}
+
+function toAbsoluteUrl(path: string): string {
+  if (/^https?:\/\//i.test(path)) {
+    return path;
+  }
+
+  const siteUrl = settings.data.siteUrl;
+  return new URL(path, siteUrl.endsWith('/') ? siteUrl : `${siteUrl}/`).href;
+}
+
+const blogPostingJsonLd: Record<string, unknown> = {
+  '@context': 'https://schema.org',
+  '@type': 'BlogPosting',
+  headline: entry.data.title,
+  image: toAbsoluteUrl(entry.data.ogImage),
+  datePublished: entry.data.publishedDate.toISOString(),
+  author: {
+    '@type': 'Person',
+    name: entry.data.author,
+  },
+};
+
+if (entry.data.updatedDate) {
+  blogPostingJsonLd.dateModified = entry.data.updatedDate.toISOString();
+}
+---
+
+<BaseLayout
+  title={entry.data.seoTitle}
+  description={entry.data.metaDescription}
+  ogImage={entry.data.ogImage}
+  canonicalPath={`/blog/${entry.data.slug}`}
+>
+  <SiteNav />
+  <article class="article">
+    <header>
+      <h1>{entry.data.title}</h1>
+      <p class="article__meta">
+        <span>{entry.data.author}</span>
+        <time datetime={entry.data.publishedDate.toISOString()}>
+          {entry.data.publishedDate.toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
+        </time>
+      </p>
+    </header>
+    <figure class="article__featured">
+      <Picture
+        src={entry.data.featuredImage.src}
+        alt={entry.data.featuredImage.alt}
+        formats={['avif', 'webp']}
+        quality="mid"
+        widths={[640, 960, 1280, 1400]}
+        sizes="(max-width: 800px) 100vw, 42rem"
+        loading="eager"
+        fetchpriority="high"
+      />
+    </figure>
+    <div class="article__body">
+      <Content />
+    </div>
+    {
+      entry.data.tags && entry.data.tags.length > 0 && (
+        <footer>
+          <h2 class="article__tags-title">Tags</h2>
+          <ul class="article__tags">
+            {entry.data.tags.map((tag) => (
+              <li>
+                <a href="#" rel="tag">
+                  {tag}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </footer>
+      )
+    }
+  </article>
+  <script type="application/ld+json" set:html={JSON.stringify(blogPostingJsonLd)} />
+</BaseLayout>
+
+<style>
+  .article {
+    padding: var(--space-5) var(--space-4) var(--space-6);
+    max-width: 42rem;
+    margin: 0 auto;
+  }
+
+  .article h1 {
+    font-family: var(--font-secondary);
+    color: var(--color-primary);
+    line-height: 1.2;
+  }
+
+  .article__meta {
+    display: flex;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+    color: var(--color-secondary);
+    font-size: 0.9375rem;
+  }
+
+  .article__featured {
+    margin: var(--space-4) 0;
+  }
+
+  .article__featured :global(img) {
+    width: 100%;
+    height: auto;
+    border-radius: 0.75rem;
+  }
+
+  .article__body :global(p + p) {
+    margin-top: var(--space-2);
+  }
+
+  .article__tags-title {
+    margin-top: var(--space-5);
+    font-size: 1rem;
+  }
+
+  .article__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+    list-style: none;
+    padding: 0;
+  }
+
+  .article__tags a {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border: 1px solid color-mix(in srgb, var(--color-text) 18%, transparent);
+    border-radius: 999px;
+    color: var(--color-primary);
+    text-decoration: none;
+  }
+</style>

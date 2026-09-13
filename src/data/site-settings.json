@@ -1,0 +1,42 @@
+[
+  {
+    "id": "default",
+    "siteName": "Site Exemplo",
+    "siteUrl": "https://exemplo.com.br",
+    "logo": {
+      "path": "/uploads/logo.svg",
+      "alt": "Logotipo do Site Exemplo"
+    },
+    "colors": {
+      "primary": "#1F2937",
+      "secondary": "#4B5563",
+      "accent": "#2563EB",
+      "background": "#FFFFFF",
+      "text": "#111827"
+    },
+    "fonts": {
+      "primaryFamily": "Inter",
+      "primaryWeights": [400, 500, 600, 700],
+      "secondaryFamily": "Source Serif 4",
+      "secondaryWeights": [400, 600]
+    },
+    "socialLinks": [
+      {
+        "platform": "instagram",
+        "url": "https://www.instagram.com/exemplo"
+      },
+      {
+        "platform": "linkedin",
+        "url": "https://www.linkedin.com/company/exemplo"
+      }
+    ],
+    "organization": {
+      "legalName": "Exemplo Comunicação LTDA",
+      "logo": "https://exemplo.com.br/uploads/logo.svg",
+      "sameAs": [
+        "https://www.instagram.com/exemplo",
+        "https://www.linkedin.com/company/exemplo"
+      ]
+    }
+  }
+]
