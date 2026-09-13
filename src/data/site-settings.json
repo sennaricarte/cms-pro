@@ -8,7 +8,7 @@
       "alt": "Logotipo do Site Exemplo"
     },
     "colors": {
-      "primary": "#1F2937",
+      "primary": "#F5220A",
       "secondary": "#4B5563",
       "accent": "#2563EB",
       "background": "#FFFFFF",
@@ -16,9 +16,17 @@
     },
     "fonts": {
       "primaryFamily": "Inter",
-      "primaryWeights": [400, 500, 600, 700],
+      "primaryWeights": [
+        400,
+        500,
+        600,
+        700
+      ],
       "secondaryFamily": "Source Serif 4",
-      "secondaryWeights": [400, 600]
+      "secondaryWeights": [
+        400,
+        600
+      ]
     },
     "socialLinks": [
       {
