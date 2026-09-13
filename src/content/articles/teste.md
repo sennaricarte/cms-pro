@@ -1,5 +1,5 @@
 ---
-title: teste
+title: teste novo
 slug: teste
 seoTitle: teste
 metaDescription: arquivo teste
@@ -13,6 +13,7 @@ publishedDate: "2026-09-13"
 tags:
   - teste
   - cms
+updatedDate: "2026-09-13"
 ---
 
 aqui está o corpo do artigo teste
