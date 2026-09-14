@@ -21,5 +21,8 @@ blocks:
         alt: Composição em azul do acervo de exemplo
       - src: ../../assets/uploads/exemplo/placeholder.webp
         alt: Segunda composição do acervo de exemplo
+  - type: recentArticles
+    count: 3
+    heading: teste novo
 ---
 
