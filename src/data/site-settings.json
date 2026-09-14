@@ -4,7 +4,7 @@
     "siteName": "Site Exemplo",
     "siteUrl": "https://exemplo.com.br",
     "logo": {
-      "path": "/uploads/logo.svg",
+      "path": "../../assets/uploads/2026/09/images.webp",
       "alt": "Logotipo do Site Exemplo"
     },
     "colors": {
